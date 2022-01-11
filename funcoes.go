@@ -164,12 +164,6 @@ func ExecutarPrograma(prg string, arg ...string) error {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
-	/*
-		if err != nil {
-			fmt.Println(err.Error())
-
-		}
-	*/
 
 	fmt.Print(string(stdout))
 
