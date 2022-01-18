@@ -23,18 +23,19 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// Leitura de Arquivos diretamente do sistema operacional
 func LeituraArquivo(arquivo string) ([]byte, error) {
 	jsonFile, err := os.Open(arquivo)
 	if err != nil {
 		fmt.Println("Error opening JSON file:", err)
-		// return nil, err
+		return nil, err
 	}
 
 	defer jsonFile.Close()
 	jsonData, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
 		fmt.Println("Error reading JSON data:", err)
-		// return nil, err
+		return nil, err
 
 	}
 
@@ -42,6 +43,7 @@ func LeituraArquivo(arquivo string) ([]byte, error) {
 
 }
 
+// Converte String para Inteiro
 func String2Int(s string) (int, error) {
 
 	i, err := strconv.Atoi(s)
@@ -49,6 +51,9 @@ func String2Int(s string) (int, error) {
 
 }
 
+// Grava array de bytes em filesystem
+// Entrada: Array de Bytes, nome de arquivo
+// Saida : Arquivo gravado no sistema de arquivo
 func GravarArquivo(post []byte, arquivo string) error {
 
 	// output, err := xml.Marshal(&post)
@@ -60,13 +65,15 @@ func GravarArquivo(post []byte, arquivo string) error {
 	return err
 }
 
+// Condição de Checagem de erro
 func CheckErr(err error) {
 	if err != nil {
-		fmt.Println("Erro de Panic: ", err)
-		panic(err)
+		log.Println("Erro Geral: ", err)
+
 	}
 }
 
+// Log de Erro com Finalização
 func LogErros(err error) {
 	log.Fatal(err.Error())
 }
@@ -91,6 +98,7 @@ func CsvExport(data [][]string) error {
 	return nil
 }
 
+// Exporta em Arquivo CSV formato 2
 func csvExport2(data [][]string) error {
 	file, err := os.Create("result.csv")
 	if err != nil {
@@ -105,6 +113,7 @@ func csvExport2(data [][]string) error {
 	return nil
 }
 
+// Realiza copia de dois arquivos
 func CopyFile(src, dst string) (int64, error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
@@ -130,10 +139,12 @@ func CopyFile(src, dst string) (int64, error) {
 	return nBytes, err
 }
 
+// Função auxiliar para acentuação
 func isMn(r rune) bool {
 	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
 }
 
+// Remove acentuação de palavras
 func RemoverAcentos(palavra string) string {
 	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
 	result, _, err := transform.String(t, palavra)
