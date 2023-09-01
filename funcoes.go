@@ -1,6 +1,7 @@
 package componentes
 
 import (
+	"bytes"
 	_ "bytes"
 	_ "database/sql"
 	"encoding/csv"
@@ -10,15 +11,20 @@ import (
 	_ "io"
 	"io/ioutil"
 	"log"
+	"math"
 	_ "net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	_ "strconv"
+	"time"
 	"unicode"
 
 	_ "github.com/gocraft/dbr"
 	_ "github.com/lib/pq"
+	"github.com/pdfcpu/pdfcpu/pkg/api"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
@@ -41,6 +47,13 @@ func LeituraArquivo(arquivo string) ([]byte, error) {
 
 	return jsonData, err
 
+}
+
+// Diretorio e a extensão, somente inserir jpeg, png, etc
+func ListaDiretorioExtensao(diretorio string, extensao string) ([]string, error) {
+	files, err := filepath.Glob(diretorio + "*." + extensao)
+
+	return files, err
 }
 
 // Converte String para Inteiro
@@ -157,6 +170,7 @@ func RemoverAcentos(palavra string) string {
 
 // Executa programa, aguardando até a finalizacao
 func ExecutarPrograma(prg string, arg ...string) error {
+	fmt.Println("Executacao: ", prg, arg)
 	cmd := exec.Command(prg, arg...)
 	stdout, err := cmd.Output()
 
@@ -181,4 +195,131 @@ func Exists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+// converter de IO Reader para []bytes
+func StreamToByte(stream io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.Bytes()
+}
+
+// Converte de Io Reader para string
+func StreamToString(stream io.Reader) string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.String()
+}
+
+/*
+ação: Recebe os nomes dos arquivos em pdf exportados no filesystem e gera um append dos arquivos
+Apaga os arquivos ao utilizar
+Entrada: Lista de Nome de Arquivos PDF exportados em Filesystem
+Saida: Arquivo PDF salvo no disco
+*/
+func Merge(arquivos []string, retorno string) error {
+	fmt.Println("Merge: ", arquivos, retorno)
+	err := api.MergeCreateFile(arquivos, retorno, nil)
+	//	err := api.MergeFile(arquivos, retorno, nil)
+
+	for _, arquivo := range arquivos {
+		fmt.Println("Arquivo:", arquivo)
+		os.Remove(arquivo)
+
+	}
+	return err
+}
+
+// Diferença de Duas Datas String no Formato YYYYMMDD
+func DiffDatasString(Inicio string, Final string) (int, error) {
+	layout := "20060102"
+	dataInicio, err := time.Parse(layout, Inicio)
+	if err != nil {
+		return 0, err
+	}
+	dataFinal, err := time.Parse(layout, Final)
+	if err != nil {
+		return 0, err
+
+	}
+	diff := math.Round(dataFinal.Sub(dataInicio).Hours() / 24)
+
+	return int(diff), nil
+
+}
+
+// Diferença de Duas Datas String no Formato YYYYMMDD
+func DiffDatas(dataInicio time.Time, dataFinal time.Time) int {
+
+	diff := math.Round(dataFinal.Sub(dataInicio).Hours() / 24)
+
+	return int(diff)
+
+}
+
+// Convert Data no padrão YYYYMMDD para golang time
+func ConvertData(data string) (time.Time, error) {
+	layout := "20060102"
+	dataTime, err := time.Parse(layout, data)
+	if err != nil {
+		return dataTime, err
+	}
+	return dataTime, nil
+
+}
+
+func GerarUID() string {
+	myuuid, err := uuid.NewV4()
+	if err != nil {
+		fmt.Println("Erro ao Gerar UID ", err)
+		return ""
+
+	}
+
+	return myuuid.String()
+
+}
+
+func RemoveDuplicateStr(strSlice []string) []string {
+	allKeys := make(map[string]bool)
+	list := []string{}
+	for _, item := range strSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
+}
+
+func RemoveDuplicateInt(intSlice []int) []int {
+	allKeys := make(map[int]bool)
+	list := []int{}
+	for _, item := range intSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
+}
+
+// Retorna o caminho absoluto do aplicativo.
+// Usado para executar o executavel fora do diretorio correte da apliação
+func CaminhoAplicativo(arquivo string) string {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	caminho := filepath.FromSlash(dir + "/" + arquivo)
+	return caminho
+
+}
+
+// Formatar CPF, colocando os Pontos e traços
+func CPFMask(cpf string) string {
+	if len(cpf) != 11 {
+		return ""
+	}
+
+	mask := fmt.Sprintf("%s.%s.%s-%s", cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11])
+	return mask
+
 }
