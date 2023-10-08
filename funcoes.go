@@ -176,7 +176,8 @@ func ExecutarPrograma(prg string, arg ...string) error {
 
 	// err := cmd.Start()
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error ao executar programa : ", err)
+		return err
 	}
 
 	fmt.Print(string(stdout))
